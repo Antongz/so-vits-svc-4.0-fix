@@ -26,7 +26,7 @@ def load_model_func(ckpt_name,cluster_name,config_name):
     config_path = "configs/" + config_name
 
     with open(config_path, encoding='utf-8-sig', errors='ignore') as f:
-        printf("load config from %s" % config_path, f)
+        print("load config from %s" % config_path, f)
         config = json.load(f)
     spk_dict = config["spk"]
 
