@@ -88,6 +88,8 @@ with app:
                 仅供个人娱乐和非商业用途，禁止用于血腥、暴力、性相关、政治相关内容
 
                 作者：bilibili@羽毛布団（联系请发B站私信）
+                
+                fix by lucwu
 
                 """)
             choice_ckpt = gr.Dropdown(label="模型选择", choices=ckpt_list, value="no_model")
@@ -118,7 +120,7 @@ with app:
             vc_output2 = gr.Audio(label="Output Audio")
         vc_submit.click(vc_fn, [sid, vc_input3, vc_transform,auto_f0,cluster_ratio, slice_db, noise_scale], [vc_output1, vc_output2])
         
-        app.launch()
+        app.launch(share=True)
 
 
 
