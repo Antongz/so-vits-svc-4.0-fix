@@ -19,46 +19,37 @@ logging.getLogger('markdown_it').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.WARNING)
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
-
-def load_model_func(ckpt_name,cluster_name,config_name):
+# 加载模型
+def load_model_func(ckpt_name, cluster_name, config_name):
     global model, cluster_model_path
-    
     config_path = "configs/" + config_name
-
-    with open(config_path, encoding='utf-8-sig', errors='ignore') as f:
-        print("load config from %s" % config_path, f)
-        config = json.load(f)
+    with open(config_path, encoding='utf-8-sig', errors='ignore') as file:
+        config = json.load(file)
     spk_dict = config["spk"]
 
-    ckpt_path = "logs/44k/" + ckpt_name
-    cluster_path = "logs/44k/" + cluster_name
-    if cluster_name == "no_clu":
-            model = Svc(ckpt_path,config_path)
-    else:
-            model = Svc(ckpt_path,config_path,cluster_model_path=cluster_path)
-
+    ckpt_path = "logs/44k/{ckpt_name}"
+    cluster_path = "logs/44k/{cluster_name}"
+    try:
+        if cluster_name == "no_clu":
+            model = Svc(ckpt_path, config_path)
+        else:
+            model = Svc(ckpt_path, config_path, cluster_model_path=cluster_path)
+    except Exception as e:
+        return "模型加载失败: {str(e)}", None
     spk_list = list(spk_dict.keys())
-    return "模型加载成功",gr.Dropdown.update(choices=spk_list)
+    return "模型加载成功", gr.Dropdown.update(choices=spk_list)
 
-
-
-#read ckpt lsit
+# 读取ckpt和cluster列表
 file_list = os.listdir("logs/44k")
-ckpt_list = []
-cluster_list = []
-for ck in file_list:
-    if os.path.splitext(ck)[-1] == ".pth" and ck[0] != "k":
-        ckpt_list.append(ck)
-    if ck[0] == "k":
-        cluster_list.append(ck)
+ckpt_list = [ck for ck in file_list if os.path.splitext(ck)[-1] == ".pth" and ck[0] != "k"]
+cluster_list = [ck for ck in file_list if ck[0] == "k"]
 if not cluster_list:
     cluster_list = ["你没有聚类模型"]
     print("no clu")
 
-
 def vc_fn(sid, input_audio, vc_transform, auto_f0,cluster_ratio, slice_db, noise_scale):
     if input_audio is None:
-        return "You need to upload an audio", None
+        return "请上传音频文件", None
     sampling_rate, audio = input_audio
     # print(audio.shape,sampling_rate)
     duration = audio.shape[0] / sampling_rate
