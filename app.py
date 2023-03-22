@@ -75,13 +75,11 @@ with app:
             gr.Markdown(value="""
                 sovits4.0 webui 推理
                 
-                修改自bilibili@麦哲云
+                修改自bilibili@麦哲云 bilibili@羽毛布団
 
                 仅供个人娱乐和非商业用途，禁止用于血腥、暴力、性相关、政治相关内容
-
-                作者：bilibili@羽毛布団（联系请发B站私信）
                 
-                fix by lucwu
+                Colab适配与优化 by lucwu
 
                 """)
             choice_ckpt = gr.Dropdown(label="模型选择", choices=ckpt_list, value="no_model")
