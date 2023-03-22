@@ -34,8 +34,6 @@ def load_model_func(ckpt_name, cluster_name, config_name):
             model = Svc(ckpt_path, config_path)
         else:
             model = Svc(ckpt_path, config_path, cluster_model_path=cluster_path)
-    except Exception as e:
-        return "模型加载失败: {str(e)}", None
     spk_list = list(spk_dict.keys())
     return "模型加载成功", gr.Dropdown.update(choices=spk_list)
 
