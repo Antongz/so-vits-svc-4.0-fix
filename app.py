@@ -20,22 +20,21 @@ logging.getLogger('urllib3').setLevel(logging.WARNING)
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
 # 加载模型
-def load_model_func(ckpt_name, cluster_name, config_name):
+def load_model_func(ckpt_name,cluster_name,config_name):
     global model, cluster_model_path
     config_path = "configs/" + config_name
-    with open(config_path, encoding='utf-8-sig', errors='ignore') as file:
-        config = json.load(file)
+    with open(config_path, encoding='utf-8-sig', errors='ignore') as f:
+        print("load config from %s" % config_path, f)
+        config = json.load(f)
     spk_dict = config["spk"]
-
-    ckpt_path = "logs/44k/{ckpt_name}"
-    cluster_path = "logs/44k/{cluster_name}"
-    try:
-        if cluster_name == "no_clu":
-            model = Svc(ckpt_path, config_path)
-        else:
-            model = Svc(ckpt_path, config_path, cluster_model_path=cluster_path)
+    ckpt_path = "logs/44k/" + ckpt_name
+    cluster_path = "logs/44k/" + cluster_name
+    if cluster_name == "no_clu":
+            model = Svc(ckpt_path,config_path)
+    else:
+            model = Svc(ckpt_path,config_path,cluster_model_path=cluster_path)
     spk_list = list(spk_dict.keys())
-    return "模型加载成功", gr.Dropdown.update(choices=spk_list)
+    return "模型加载成功",gr.Dropdown.update(choices=spk_list)
 
 # 读取ckpt和cluster列表
 file_list = os.listdir("logs/44k")
