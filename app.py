@@ -12,7 +12,9 @@ import json
 parser = argparse.ArgumentParser()
 parser.add_argument("--user", type=str, help='set gradio user', default=None)
 parser.add_argument("--password", type=str, help='set gradio password', default=None)
+parser.add_argument('--share', action='store_true', help='enable sharing')
 cmd_opts = parser.parse_args()
+share = cmd_opts.share
 
 logging.getLogger('numba').setLevel(logging.WARNING)
 logging.getLogger('markdown_it').setLevel(logging.WARNING)
@@ -44,6 +46,7 @@ if not cluster_list:
     cluster_list = ["你没有聚类模型"]
     print("no clu")
 
+# 合成语音
 def vc_fn(sid, input_audio, vc_transform, auto_f0,cluster_ratio, slice_db, noise_scale):
     if input_audio is None:
         return "请上传音频文件", None
@@ -69,7 +72,8 @@ app = gr.Blocks()
 with app:
     with gr.Tabs():
         with gr.TabItem("Basic"):
-            gr.Markdown(value="""
+            with gr.Row():
+                gr.Markdown(value="""
                 sovits4.0 webui 推理
                 
                 修改自bilibili@麦哲云 bilibili@羽毛布団
@@ -79,35 +83,57 @@ with app:
                 Colab适配与优化 by lucwu
 
                 """)
-            choice_ckpt = gr.Dropdown(label="模型选择", choices=ckpt_list, value="no_model")
-            config_choice = gr.Dropdown(label="配置文件", choices=os.listdir("configs"), value="no_config")
-            cluster_choice = gr.Dropdown(label="选择聚类模型", choices=cluster_list, value="no_clu")
-            loadckpt = gr.Button("加载模型", variant="primary")
+            with gr.Row():
+                with gr.Column():
+                    
+                    with gr.Row():
+                        with gr.Column():
+                            choice_ckpt = gr.Dropdown(label="模型选择", choices=ckpt_list, value="")
+                        with gr.Column():
+                            config_choice = gr.Dropdown(label="配置文件", choices=os.listdir("configs"), value="")
+                        with gr.Column():
+                            cluster_choice = gr.Dropdown(label="聚类模型", choices=cluster_list, value="")
+                    
+                    gr.Markdown(value="""
+                    请稍等片刻，模型加载大约需要10秒。后续操作不需要重新加载模型
+                    """)
+                        
+                    loadckpt = gr.Button("加载模型", variant="primary")
+                    
+                    with gr.Row():
+                        with gr.Column():
+                            sid = gr.Dropdown(label="音色", value="")
+                        with gr.Column():
+                            model_message = gr.Textbox(label="Output Message")
+                            
+                    loadckpt.click(load_model_func,[choice_ckpt,cluster_choice,config_choice],[model_message, sid])
             
-            sid = gr.Dropdown(label="音色", value="speaker0")
-            model_message = gr.Textbox(label="Output Message")
-            
-            loadckpt.click(load_model_func,[choice_ckpt,cluster_choice,config_choice],[model_message, sid])
-            
-            gr.Markdown(value="""
-                请稍等片刻，模型加载大约需要10秒。后续操作不需要重新加载模型
-                """)
-            
-            
-            
-            vc_input3 = gr.Audio(label="上传音频（长度小于90秒）")
-            vc_transform = gr.Number(label="变调（整数，可以正负，半音数量，升高八度就是12）", value=0)
-            cluster_ratio = gr.Number(label="聚类模型混合比例，0-1之间，默认为0不启用聚类，能提升音色相似度，但会导致咬字下降（如果使用建议0.5左右）", value=0)
-            auto_f0 = gr.Checkbox(label="自动f0预测，配合聚类模型f0预测效果更好,会导致变调功能失效（仅限转换语音，歌声不要勾选此项会究极跑调）", value=False)
-            slice_db = gr.Number(label="切片阈值", value=-40)
-            noise_scale = gr.Number(label="noise_scale 建议不要动，会影响音质，玄学参数", value=0.4)
-            
-            vc_submit = gr.Button("转换", variant="primary")
-            vc_output1 = gr.Textbox(label="Output Message")
-            vc_output2 = gr.Audio(label="Output Audio")
-        vc_submit.click(vc_fn, [sid, vc_input3, vc_transform,auto_f0,cluster_ratio, slice_db, noise_scale], [vc_output1, vc_output2])
+                    vc_input3 = gr.Audio(label="上传音频（长度小于90秒）")
+                    vc_transform = gr.Number(label="变调（整数，可以正负，半音数量，升高八度就是12）", value=0)
+                    cluster_ratio = gr.Number(label="聚类模型混合比例，0-1之间，默认为0不启用聚类，能提升音色相似度，但会导致咬字下降（如果使用建议0.5左右）", value=0)
+                    auto_f0 = gr.Checkbox(label="自动f0预测，配合聚类模型f0预测效果更好,会导致变调功能失效（仅限转换语音，歌声不要勾选此项会究极跑调）", value=False)
+                    
+                    with gr.Row():
+                        with gr.Column():
+                            slice_db = gr.Number(label="切片阈值", value=-40)
+                        with gr.Column():
+                            noise_scale = gr.Number(label="noise_scale 建议不要动，会影响音质，玄学参数", value=0.4)
+                    
+                with gr.Column():
+                    with gr.Row():
+                        voice_uid = "xingtong"
+                        cover = f"assets/{voice_uid}/{voice_uid}.png" if os.path.exists(f"assets/{voice_uid}/{voice_uid}.png") else None
+                        gr.Markdown(
+                            '<div align="center">'
+                            f'<img style="width:auto;height:300px;" src="file/{cover}">' if cover else ""
+                            '</div>'
+                        )
+                    vc_output1 = gr.Textbox(label="Output Message")
+                    vc_output2 = gr.Audio(label="Output Audio")
+                    vc_submit = gr.Button("转换", variant="primary")
+                    vc_submit.click(vc_fn, [sid, vc_input3, vc_transform,auto_f0,cluster_ratio, slice_db, noise_scale], [vc_output1, vc_output2])
         
-        app.launch(share=True)
+        app.launch(share=share)
 
 
 
