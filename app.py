@@ -1,5 +1,6 @@
 import io
 import os
+import openai
 import argparse
 import gradio as gr
 import librosa
@@ -21,6 +22,14 @@ logging.getLogger('markdown_it').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.WARNING)
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
+# google colab 环境判断
+def is_google_colab():
+    try:
+        import google.colab
+        return True
+    except:
+        return False
+    
 # 加载模型
 def load_model_func(ckpt_name,cluster_name,config_name):
     global model, cluster_model_path
@@ -67,22 +76,50 @@ def vc_fn(sid, input_audio, vc_transform, auto_f0,cluster_ratio, slice_db, noise
     _audio = model.slice_inference(out_wav_path, sid, vc_transform, slice_db, cluster_ratio, auto_f0, noise_scale)
     return "Success", (44100, _audio)
 
+# 默认prompt 参数
+prompt = ""
+openAiKey = ""
 
+# 生成回复
+def openai_create(prompt):
+    response = openai.Completion.create(
+    model="text-davinci-003",
+    prompt=prompt,
+    temperature=0.9,
+    max_tokens=1500,
+    top_p=1,
+    frequency_penalty=0,
+    presence_penalty=0.6,
+    stop=[" Human:", " AI:"]
+    )
+    return response.choices[0].text
+
+
+def chatgpt_clone(input, history):
+    history = history or []
+    s = list(sum(history, ()))
+    s.append(input)
+    inp = ' '.join(s)
+    output = openai_create(inp)
+    history.append((input, output))
+    return history, history
+                
 app = gr.Blocks()
 with app:
+    
+    gr.Markdown(value="""
+    sovits4.0 webui 推理
+                
+    修改自bilibili@麦哲云 bilibili@羽毛布団
+
+    仅供个人娱乐和非商业用途，禁止用于血腥、暴力、性相关、政治相关内容
+                
+    Colab适配与优化 by lucwu
+
+    """)
+    
     with gr.Tabs():
-        with gr.TabItem("Basic"):
-            with gr.Row():
-                gr.Markdown(value="""
-                sovits4.0 webui 推理
-                
-                修改自bilibili@麦哲云 bilibili@羽毛布団
-
-                仅供个人娱乐和非商业用途，禁止用于血腥、暴力、性相关、政治相关内容
-                
-                Colab适配与优化 by lucwu
-
-                """)
+        with gr.TabItem("语音推理"):
             with gr.Row():
                 with gr.Column():
                     
@@ -132,8 +169,17 @@ with app:
                     vc_output2 = gr.Audio(label="Output Audio")
                     vc_submit = gr.Button("转换", variant="primary")
                     vc_submit.click(vc_fn, [sid, vc_input3, vc_transform,auto_f0,cluster_ratio, slice_db, noise_scale], [vc_output1, vc_output2])
+        with gr.TabItem("gpt接入"):
+            openai.api_key = 'sk-xxxxxxxxxxxxxxxxxxxxx'
+            start_sequence = "\nAI:"
+            restart_sequence = "\nHuman: "
+            chatbot = gr.Chatbot()
+            message = gr.Textbox(placeholder=prompt)
+            state = gr.State()
+            submit = gr.Button("发送")
+            submit.click(chatgpt_clone, inputs=[message, state], outputs=[chatbot, state])
         
-        app.launch(share=share)
+app.launch(share=share)
 
 
 
