@@ -39,17 +39,6 @@ def is_google_colab():
     except:
         return False
 
-# text to speech的语音合成
-
-
-def text_to_speech(text):
-    tts = gTTS(text=text, lang='en')
-    tts.save('temp_audio.mp3')
-    if os.name == 'posix':  # macOS / Linux
-        subprocess.call(['afplay', 'temp_audio.mp3'])
-    else:  # Windows
-        subprocess.call(['start', 'temp_audio.mp3'])
-
 # 加载模型
 
 
@@ -190,5 +179,7 @@ with app:
             message = gr.Textbox(placeholder=prompt)
             submit = gr.Button("发送")
             submit.click(chatgpt_clone, [message, state], [chatbot, state])
+            gpt_outputVoice = gr.Audio(
+                label="Output Bot Audio", value="bot.wav")
 
 app.launch(share=share)

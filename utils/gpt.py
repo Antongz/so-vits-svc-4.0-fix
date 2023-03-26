@@ -1,4 +1,7 @@
+import os
 import openai
+import subprocess
+from gtts import gTTS
 
 # 获取api生成的回复
 def openai_create(prompt: str):
@@ -20,5 +23,15 @@ def chatgpt_clone(input:str, history=[]):
     s.append(input)
     inp = ' '.join(s)
     output = openai_create(inp)
+    text_To_Speech(output)
     history.append((input, output))
     return history, history
+
+def text_To_Speech(text):
+    tts = gTTS(text=text, lang='zh')
+    tts.save('bot.wav')
+    return 'bot.wav'
+    #if os.name == 'posix':  # macOS / Linux
+        #subprocess.call(['afplay', 'temp.wav'])
+    #else:  # Windows
+        #subprocess.call(['start', 'temp.wav'])
