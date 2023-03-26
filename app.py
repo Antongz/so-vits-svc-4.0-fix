@@ -14,13 +14,18 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--user", type=str, help='set gradio user', default=None)
 parser.add_argument("--password", type=str, help='set gradio password', default=None)
 parser.add_argument('--share', action='store_true', help='enable sharing')
+parser.add_argument('--key', help='openai api key', default = "your openai key")
 cmd_opts = parser.parse_args()
 share = cmd_opts.share
+key = cmd_opts.key
 
 logging.getLogger('numba').setLevel(logging.WARNING)
 logging.getLogger('markdown_it').setLevel(logging.WARNING)
 logging.getLogger('urllib3').setLevel(logging.WARNING)
 logging.getLogger('matplotlib').setLevel(logging.WARNING)
+
+openai.api_key = key
+messages = [{"role": "system", "content": ''}]
 
 # google colab 环境判断
 def is_google_colab():
@@ -29,7 +34,16 @@ def is_google_colab():
         return True
     except:
         return False
-    
+
+# text to speech的语音合成
+def text_to_speech(text):
+    tts = gTTS(text=text, lang='en')
+    tts.save('temp_audio.mp3')
+    if os.name == 'posix':  # macOS / Linux
+        subprocess.call(['afplay', 'temp_audio.mp3'])
+    else:  # Windows
+        subprocess.call(['start', 'temp_audio.mp3'])
+        
 # 加载模型
 def load_model_func(ckpt_name,cluster_name,config_name):
     global model, cluster_model_path
@@ -78,7 +92,6 @@ def vc_fn(sid, input_audio, vc_transform, auto_f0,cluster_ratio, slice_db, noise
 
 # 默认prompt 参数
 prompt = ""
-openAiKey = ""
 
 # 生成回复
 def openai_create(prompt):
@@ -169,8 +182,8 @@ with app:
                     vc_output2 = gr.Audio(label="Output Audio")
                     vc_submit = gr.Button("转换", variant="primary")
                     vc_submit.click(vc_fn, [sid, vc_input3, vc_transform,auto_f0,cluster_ratio, slice_db, noise_scale], [vc_output1, vc_output2])
+
         with gr.TabItem("gpt接入"):
-            openai.api_key = 'sk-xxxxxxxxxxxxxxxxxxxxx'
             start_sequence = "\nAI:"
             restart_sequence = "\nHuman: "
             chatbot = gr.Chatbot()
