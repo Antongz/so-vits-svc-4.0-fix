@@ -7,7 +7,7 @@ import librosa
 import numpy as np
 import soundfile
 from inference.infer_tool import Svc
-from utils.gpt import *
+from utils import *
 import logging
 import json
 
@@ -74,8 +74,9 @@ if not cluster_list:
 def vc_fn(sid, input_audio, vc_transform, auto_f0, cluster_ratio, slice_db, noise_scale):
     if input_audio is None:
         return "请上传音频文件", None
+    print (input_audio)
     sampling_rate, audio = input_audio
-    # print(audio.shape,sampling_rate)
+    print(audio.shape,sampling_rate)
     duration = audio.shape[0] / sampling_rate
     if duration > 90:
         return "请上传小于90s的音频，需要转换长音频请本地进行转换", None
@@ -85,7 +86,7 @@ def vc_fn(sid, input_audio, vc_transform, auto_f0, cluster_ratio, slice_db, nois
     if sampling_rate != 16000:
         audio = librosa.resample(audio, orig_sr=sampling_rate, target_sr=16000)
     print(audio.shape)
-    out_wav_path = "temp.wav"
+    out_wav_path = "./output/temp.wav"
     soundfile.write(out_wav_path, audio, 16000, format="wav")
     print(cluster_ratio, auto_f0, noise_scale)
     _audio = model.slice_inference(
@@ -93,9 +94,23 @@ def vc_fn(sid, input_audio, vc_transform, auto_f0, cluster_ratio, slice_db, nois
     return "Success", (44100, _audio)
 
 
+# 根据之前的历史生成回复
+def chatgpt_clone(input, history, sid, vc_transform, auto_f0, cluster_ratio, slice_db, noise_scale):
+    s = list(sum(history, ()))
+    s.append(input)
+    inp = ' '.join(s)
+    output = openai_create(inp)
+    text_To_Speech(output)
+    history.append((input, output))
+    # 从./output/edgeBot.wav 提取音频档
+    audio_ = read_audio_from_file("./output/edgeBot.mp3")
+    audio = vc_fn(sid, audio_, vc_transform, slice_db,
+                  cluster_ratio, auto_f0, noise_scale)
+    return history, history, audio
+
+
 # 默认prompt 参数
 prompt = ""
-
 
 app = gr.Blocks()
 with app:
@@ -177,9 +192,9 @@ with app:
             chatbot = gr.Chatbot()
             state = gr.State([])
             message = gr.Textbox(placeholder=prompt)
+            gpt_output = gr.Audio(label="Output Audio")
             submit = gr.Button("发送")
-            submit.click(chatgpt_clone, [message, state], [chatbot, state])
-            gpt_outputVoice = gr.Audio(
-                label="Output Bot Audio", value="bot.wav")
+            submit.click(chatgpt_clone, [message, state, sid, vc_transform,
+                                         auto_f0, cluster_ratio, slice_db, noise_scale], [chatbot, state, gpt_output])
 
 app.launch(share=share)
