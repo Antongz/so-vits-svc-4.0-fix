@@ -19,3 +19,4 @@ librosa==0.8.1
 tensorboard
 tensorboardX
 edge-tts
+gtts

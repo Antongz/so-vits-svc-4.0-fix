@@ -7,9 +7,11 @@ import librosa
 import numpy as np
 import soundfile
 from inference.infer_tool import Svc
+from scipy.io import wavfile
 from utils import *
 import logging
 import json
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--user", type=str, help='set gradio user', default=None)
@@ -74,9 +76,8 @@ if not cluster_list:
 def vc_fn(sid, input_audio, vc_transform, auto_f0, cluster_ratio, slice_db, noise_scale):
     if input_audio is None:
         return "请上传音频文件", None
-    print (input_audio)
     sampling_rate, audio = input_audio
-    print(audio.shape,sampling_rate)
+    print(audio.shape,sampling_rate, audio, audio.dtype)
     duration = audio.shape[0] / sampling_rate
     if duration > 90:
         return "请上传小于90s的音频，需要转换长音频请本地进行转换", None
@@ -85,12 +86,15 @@ def vc_fn(sid, input_audio, vc_transform, auto_f0, cluster_ratio, slice_db, nois
         audio = librosa.to_mono(audio.transpose(1, 0))
     if sampling_rate != 16000:
         audio = librosa.resample(audio, orig_sr=sampling_rate, target_sr=16000)
-    print(audio.shape)
     out_wav_path = "./output/temp.wav"
     soundfile.write(out_wav_path, audio, 16000, format="wav")
+    samplerate, data = wavfile.read(out_wav_path)
+    print('4444',samplerate, data, data.dtype)
     print(cluster_ratio, auto_f0, noise_scale)
     _audio = model.slice_inference(
         out_wav_path, sid, vc_transform, slice_db, cluster_ratio, auto_f0, noise_scale)
+    final = save_wav_file("./output/edgeBotFinal.wav", _audio, 44100)
+    print ('5555',_audio, _audio.dtype, final)
     return "Success", (44100, _audio)
 
 
@@ -104,8 +108,9 @@ def chatgpt_clone(input, history, sid, vc_transform, auto_f0, cluster_ratio, sli
     history.append((input, output))
     # 从./output/edgeBot.wav 提取音频档
     audio_ = read_audio_from_file("./output/edgeBot.mp3")
-    audio = vc_fn(sid, audio_, vc_transform, slice_db,
-                  cluster_ratio, auto_f0, noise_scale)
+    print(audio_)
+    text, audio = vc_fn(sid, audio_, vc_transform, auto_f0,
+                  cluster_ratio, slice_db, noise_scale)
     return history, history, audio
 
 
@@ -185,6 +190,7 @@ with app:
                     vc_output1 = gr.Textbox(label="Output Message")
                     vc_output2 = gr.Audio(label="Output Audio")
                     vc_submit = gr.Button("转换", variant="primary")
+                    print(vc_input3, vc_input3.value)
                     vc_submit.click(vc_fn, [sid, vc_input3, vc_transform, auto_f0,
                                             cluster_ratio, slice_db, noise_scale], [vc_output1, vc_output2])
 

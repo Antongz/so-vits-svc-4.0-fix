@@ -1,14 +1,32 @@
 from pydub import AudioSegment
 import numpy as np
+import gradio as gr
+import wave 
+from scipy.io import wavfile
 
 
-def read_audio_from_file(file_path):
-    # 使用pydub加载mp3文件
-    audio = AudioSegment.from_file(file_path, format="mp3")
-    # 将音频格式转换为wav
-    audio_temp = audio.set_frame_rate(16000).set_channels(1)
-    # 将音频数据转换为numpy数组
-    audio = np.array(audio_temp.get_array_of_samples())
-    # 获取采样率
-    sample_rate = audio_temp.frame_rate
-    return (sample_rate, audio)
+
+def read_audio_from_file(filepath):
+    # 读取MP3文件并转换为WAV格式
+    sound = AudioSegment.from_mp3(filepath)
+    sound.export("./output/edgeBot.wav", format="wav")
+    samplerate, data = wavfile.read('./output/edgeBot.wav')
+    return samplerate, data
+
+
+def save_wav_file(file_path, audio, sample_rate):
+    """
+    Save a numpy array as a WAV file.
+
+    Parameters:
+    file_path (str): Path to save the WAV file.
+    audio (np.ndarray): Numpy array containing the audio data.
+    sample_rate (int): Sample rate of the audio data.
+
+    Returns:
+    None
+    """
+    # convert audio data to 16-bit integers and scale to the range of -32768 to 32767
+    scaled_audio = np.int16(audio * 32767)
+    # save the WAV file
+    wavfile.write(file_path, sample_rate, scaled_audio)

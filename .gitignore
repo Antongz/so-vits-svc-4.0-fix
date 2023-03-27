@@ -146,6 +146,8 @@ raw
 results
 inference/chunks_temp.json
 logs
+output/**
+configs/**
 hubert/checkpoint_best_legacy_500.pt
 configs/config.json
 filelists/test.txt
