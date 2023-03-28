@@ -68,7 +68,7 @@ ckpt_list = [ck for ck in file_list if os.path.splitext(
 cluster_list = [ck for ck in file_list if ck[0] == "k"]
 if not cluster_list:
     cluster_list = ["你没有聚类模型"]
-    print("no clu")
+    print("no clu, 你没有聚类模型")
 
 # 合成语音
 
@@ -89,12 +89,11 @@ def vc_fn(sid, input_audio, vc_transform, auto_f0, cluster_ratio, slice_db, nois
     out_wav_path = "./output/temp.wav"
     soundfile.write(out_wav_path, audio, 16000, format="wav")
     samplerate, data = wavfile.read(out_wav_path)
-    print('4444',samplerate, data, data.dtype)
+    print(samplerate, data, data.dtype)
     print(cluster_ratio, auto_f0, noise_scale)
     _audio = model.slice_inference(
         out_wav_path, sid, vc_transform, slice_db, cluster_ratio, auto_f0, noise_scale)
-    final = save_wav_file("./output/edgeBotFinal.wav", _audio, 44100)
-    print ('5555',_audio, _audio.dtype, final)
+    save_wav_file("./output/edgeBotFinal.wav", _audio, 44100)
     return "Success", (44100, _audio)
 
 
@@ -108,7 +107,6 @@ def chatgpt_clone(input, history, sid, vc_transform, auto_f0, cluster_ratio, sli
     history.append((input, output))
     # 从./output/edgeBot.wav 提取音频档
     audio_ = read_audio_from_file("./output/edgeBot.mp3")
-    print(audio_)
     text, audio = vc_fn(sid, audio_, vc_transform, auto_f0,
                   cluster_ratio, slice_db, noise_scale)
     return history, history, audio
@@ -196,8 +194,8 @@ with app:
         with gr.TabItem("gpt语音对话"):
             chatbot = gr.Chatbot()
             state = gr.State([])
-            message = gr.Textbox(placeholder=prompt)
             gpt_output = gr.Audio(label="Output Audio")
+            message = gr.Textbox(placeholder=prompt)
             submit = gr.Button("发送")
             submit.click(chatgpt_clone, [message, state, sid, vc_transform,
                                          auto_f0, cluster_ratio, slice_db, noise_scale], [chatbot, state, gpt_output])
