@@ -112,6 +112,13 @@ def chatgpt_clone(input, history, sid, vc_transform, auto_f0, cluster_ratio, sli
     return history, history, audio
 
 
+def text_to_speech_clone( input, sid, vc_transform, auto_f0, cluster_ratio, slice_db, noise_scale):
+    text_To_Speech(input)
+    audio_ = read_audio_from_file("./output/edgeBot.mp3")
+    text, audio = vc_fn(sid, audio_, vc_transform, auto_f0,
+                  cluster_ratio, slice_db, noise_scale)
+    return audio
+
 # 默认prompt 参数
 prompt = ""
 
@@ -200,4 +207,10 @@ with app:
             submit.click(chatgpt_clone, [message, state, sid, vc_transform,
                                          auto_f0, cluster_ratio, slice_db, noise_scale], [chatbot, state, gpt_output])
 
+        with gr.TabItem("TTS+音色转换"):
+            text_input = gr.Textbox(placeholder="请输入你的文本")
+            sound_output = gr.Audio(label="Output Audio")
+            submit_text = gr.Button("发送")
+            submit_text.click(text_to_speech_clone, [text_input, sid, vc_transform, auto_f0, cluster_ratio, slice_db, noise_scale], [sound_output])
+            
 app.launch(share=share)
