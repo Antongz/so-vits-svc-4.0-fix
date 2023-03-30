@@ -183,7 +183,8 @@ with app:
                                 label="noise_scale 建议不要动，会影响音质，玄学参数", value=0.4)
 
                 with gr.Column():
-                    gr.Markdown(
+                    isCodelab = is_google_colab()
+                    gr.Markdown( visible=isCodelab, value =
                     '## <center> </br> \n'
                     "\n\n"
                     '# <center> sovits4.0 webui 推理\n'
