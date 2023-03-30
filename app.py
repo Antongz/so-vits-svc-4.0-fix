@@ -117,6 +117,8 @@ def text_to_speech_clone( input, sid, vc_transform, auto_f0, cluster_ratio, slic
     audio_ = read_audio_from_file("./output/edgeBot.mp3")
     text, audio = vc_fn(sid, audio_, vc_transform, auto_f0,
                   cluster_ratio, slice_db, noise_scale)
+    test_sound = AudioSegment.from_file("./output/edgeBotFinal.wav", "wav")
+    match_target_amplitude(test_sound, -30.0)
     return audio
 
 # 默认prompt 参数

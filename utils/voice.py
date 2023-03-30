@@ -14,6 +14,12 @@ def read_audio_from_file(filepath):
     return samplerate, data
 
 
+def match_target_amplitude(sound, target_dBFS):
+    change_in_dBFS = target_dBFS - sound.dBFS
+    normalized_sound = sound.apply_gain(change_in_dBFS)
+    normalized_sound.export("./output/edgeBot_normalized.wav", format="wav")
+    #return sound.apply_gain(change_in_dBFS)
+                            
 def save_wav_file(file_path, audio, sample_rate):
     """
     Save a numpy array as a WAV file.

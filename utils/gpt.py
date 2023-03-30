@@ -19,8 +19,8 @@ def openai_create(prompt: str):
     return response["choices"][0]["message"]["content"]
         
 def text_To_Speech(text):
-    tts = gTTS(text=text, lang='zh')
-    tts.save('./output/bot.wav')
+    #tts = gTTS(text=text, lang='zh')
+    #tts.save('./output/bot.wav')
     # 将 AI 生成的文本传递给 edge-tts 命令
     command = f'edge-tts --voice zh-CN-XiaoyiNeural --text "{text}" --write-media ./output/edgeBot.mp3'  
     subprocess.run(command, shell=True)  # 执行命令行指令
