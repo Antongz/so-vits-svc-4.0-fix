@@ -133,7 +133,7 @@ def clear_message():
 # 默认prompt 参数
 prompt = ""
 
-app = gr.Blocks()
+app = gr.Blocks(title="So-Vits-GPT")
 with app:
     with gr.Row():
         with gr.Column():
