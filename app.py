@@ -18,7 +18,7 @@ parser.add_argument("--user", type=str, help='set gradio user', default=None)
 parser.add_argument("--password", type=str,
                     help='set gradio password', default=None)
 parser.add_argument('--share', action='store_true', help='enable sharing')
-parser.add_argument('--key', help='openai api key', default="your openai key")
+parser.add_argument('--key', help='openai api key', default=None)
 cmd_opts = parser.parse_args()
 share = cmd_opts.share
 key = cmd_opts.key
@@ -30,6 +30,12 @@ logging.getLogger('matplotlib').setLevel(logging.WARNING)
 
 openai.api_key = key
 messages = [{"role": "system", "content": ''}]
+
+# 设定openAi key
+def set_api_key(api_key):
+    openai.api_key = api_key
+    print("API Key set successfully.", api_key)
+    return api_key
 
 # google colab 环境判断
 
@@ -121,6 +127,9 @@ def text_to_speech_clone( input, sid, vc_transform, auto_f0, cluster_ratio, slic
     match_target_amplitude(test_sound, -30.0)
     return audio
 
+def clear_message():
+    return gr.update(value="", placeholder="要一起聊聊什么呢~")
+            
 # 默认prompt 参数
 prompt = ""
 
@@ -202,18 +211,30 @@ with app:
                                             cluster_ratio, slice_db, noise_scale], [vc_output1, vc_output2])
 
         with gr.TabItem("gpt语音对话"):
+            api_key_input = gr.Textbox(
+                type="password",
+                label="OpenAI API Key",
+                placeholder="Enter OpenAI API Key",
+                value=key,
+            )
             chatbot = gr.Chatbot()
             state = gr.State([])
             gpt_output = gr.Audio(label="Output Audio")
-            message = gr.Textbox(placeholder=prompt)
-            submit = gr.Button("发送")
+            message = gr.Textbox(placeholder="要一起聊聊什么呢~")
+            with gr.Row():
+                with gr.Column():
+                    set_api = gr.Button("设定api key", variant="primary")
+                with gr.Column():
+                    submit = gr.Button("发送")
+            
+            set_api.click(set_api_key, [api_key_input], [api_key_input])
             submit.click(chatgpt_clone, [message, state, sid, vc_transform,
-                                         auto_f0, cluster_ratio, slice_db, noise_scale], [chatbot, state, gpt_output])
+                                         auto_f0, cluster_ratio, slice_db, noise_scale], [chatbot, state, gpt_output]).then(clear_message, outputs=[message])
 
         with gr.TabItem("TTS+音色转换"):
             text_input = gr.Textbox(placeholder="请输入你的文本")
             sound_output = gr.Audio(label="Output Audio")
-            submit_text = gr.Button("发送")
+            submit_text = gr.Button("发送", variant="primary")
             submit_text.click(text_to_speech_clone, [text_input, sid, vc_transform, auto_f0, cluster_ratio, slice_db, noise_scale], [sound_output])
             
 app.launch(share=share)

@@ -15,6 +15,7 @@ def openai_create(prompt: str):
                 "content": prompt,
             }
         ],
+        request_timeout=60,
     )
     return response["choices"][0]["message"]["content"]
         
